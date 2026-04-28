@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Digital Twin City - Flood Management</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="titleBlock">
+        <h1>DIGITAL TWIN CITY</h1>
+        <p class="subtitle" id="currentCity">Real-time urban intelligence with Flood Management — Ludhiana, India</p>
+      </div>
+
+      <div class="headerRight">
+        <!-- City Selector -->
+        <div class="citySelector">
+          <span class="cityLabel">City</span>
+          <select id="citySelect" onchange="selectCity()">
+            <option value="Delhi">Delhi</option>
+            <option value="Mumbai">Mumbai</option>
+            <option value="Bangalore">Bangalore</option>
+            <option value="Chennai">Chennai</option>
+            <option value="Hyderabad">Hyderabad</option>
+            <option value="Kolkata">Kolkata</option>
+            <option value="Ludhiana" selected>Ludhiana</option>
+            <option value="Patiala">Patiala</option>
+            <option value="Amritsar">Amritsar</option>
+            <option value="Chandigarh">Chandigarh</option>
+          </select>
+        </div>
+
+        <!-- NEW DIRECTIONS PANEL -->
+        <div class="directionsPanel">
+          <div class="directionTabs">
+            <button class="tabBtn active" onclick="showTab('route')">Route</button>
+            <button class="tabBtn" onclick="showTab('places')">Places</button>
+          </div>
+          
+          <div id="routeTab" class="tabContent active">
+            <div class="inputGroup">
+              <input type="text" id="startPoint" placeholder="Start" list="placesList" />
+              <input type="text" id="endPoint" placeholder="Destination" list="placesList" />
+              <button class="routeBtn" onclick="calculateRoute()">🚗 Route</button>
+            </div>
+          </div>
+          
+          <div id="placesTab" class="tabContent">
+            <select id="placesSelect" onchange="selectPlace()">
+              <option>Hospitals</option>
+              <option>Police Stations</option>
+              <option>Markets</option>
+              <option>Schools</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="searchContainer">
+          <div class="searchBox">
+            <input type="text" id="citySearch" placeholder="Search city..." list="cities" />
+            <datalist id="cities">
+              <option value="Delhi"><option value="Mumbai"><option value="Bangalore">
+              <option value="Chennai"><option value="Hyderabad"><option value="Kolkata">
+              <option value="Ludhiana"><option value="Patiala"><option value="Amritsar">
+              <option value="Chandigarh">
+            </datalist>
+            <button class="searchBtn" onclick="searchCity()">🔍</button>
+          </div>
+          <span class="liveIndicator">● LIVE</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- REST OF HTML REMAINS SAME -->
+    <section class="metrics">
+      <div class="card" data-metric="traffic">
+        <div class="cardHeader">
+          <h3>TRAFFIC</h3>
+          <span class="cardTrend up">▲ 12%</span>
+        </div>
+        <div class="cardValueRow">
+          <h2 id="trafficValue">--</h2>
+          <span class="cardUnit">vehicles/hr</span>
+        </div>
+      </div>
+
+      <div class="card" data-metric="energy">
+        <div class="cardHeader">
+          <h3>ENERGY</h3>
+          <span class="cardTrend down">▼ 3%</span>
+        </div>
+        <div class="cardValueRow">
+          <h2 id="energyValue">--</h2>
+          <span class="cardUnit">MW</span>
+        </div>
+      </div>
+
+      <div class="card" data-metric="air">
+        <div class="cardHeader">
+          <h3>AIR QUALITY</h3>
+          <span class="cardStatus good">Good</span>
+        </div>
+        <div class="cardValueRow">
+          <h2 id="aqiValue">--</h2>
+          <span class="cardUnit">AQI</span>
+        </div>
+      </div>
+
+      <div class="card" data-metric="weather">
+        <div class="cardHeader">
+          <h3>WEATHER</h3>
+          <span class="cardStatus normal">Normal</span>
+        </div>
+        <div class="cardValueRow">
+          <h2 id="weatherTemp">--</h2>
+          <span class="cardUnit">°C, <span id="weatherDesc">--</span></span>
+        </div>
+      </div>
+
+      <div class="card flood-card" data-metric="flood">
+        <div class="cardHeader">
+          <h3>FLOOD RISK</h3>
+          <span class="cardStatus" id="floodStatus">Safe</span>
+        </div>
+        <div class="cardValueRow">
+          <h2 id="floodLevel">--</h2>
+          <span class="cardUnit">m above normal</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="middle">
+      <div id="map"></div>
+      <div class="status">
+        <h3>SYSTEM STATUS</h3>
+        <div class="statusRow">
+          <span>Traffic Control</span>
+          <div class="progress"><div id="trafficBar"></div></div>
+          <span class="statusValue" id="trafficBarVal">72%</span>
+        </div>
+        <div class="statusRow">
+          <span>Power Grid</span>
+          <div class="progress"><div id="powerBar"></div></div>
+          <span class="statusValue" id="powerBarVal">91%</span>
+        </div>
+        <div class="statusRow">
+          <span>Water Supply</span>
+          <div class="progress"><div id="waterBar"></div></div>
+          <span class="statusValue" id="waterBarVal">58%</span>
+        </div>
+        <div class="statusRow flood-row">
+          <span>Flood Monitoring</span>
+          <div class="progress flood-progress"><div id="floodBar"></div></div>
+          <span class="statusValue" id="floodBarVal">24%</span>
+        </div>
+        <div class="statusRow">
+          <span>Air Quality</span>
+          <div class="progress"><div id="airBar"></div></div>
+          <span class="statusValue" id="airBarVal">34%</span>
+        </div>
+        <div class="statusRow">
+          <span>Emergency Response</span>
+          <div class="progress"><div id="emergencyBar"></div></div>
+          <span class="statusValue" id="emergencyBarVal">12%</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="charts">
+      <div class="chartBox">
+        <h3>TRAFFIC FLOW</h3>
+        <canvas id="trafficChart"></canvas>
+      </div>
+      <div class="chartBox">
+        <h3>ENERGY GRID (MW)</h3>
+        <canvas id="energyChart"></canvas>
+      </div>
+      <div class="chartBox">
+        <h3>AIR QUALITY INDEX</h3>
+        <canvas id="airChart"></canvas>
+      </div>
+      <div class="chartBox flood-chart">
+        <h3>FLOOD LEVELS</h3>
+        <canvas id="floodChart"></canvas>
+      </div>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
